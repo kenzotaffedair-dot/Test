@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════
+#  🔒 Netlify Config — Agent IA Millau
+#  Inclut : headers sécurité, CSP, redirections, Node version
+# ═══════════════════════════════════════════════════════════════════
+
+[build]
+  functions = "netlify/functions"
+  publish   = "."
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ─── Headers de sécurité globaux ───────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options            = "SAMEORIGIN"
+    X-Content-Type-Options     = "nosniff"
+    X-XSS-Protection           = "1; mode=block"
+    Referrer-Policy            = "strict-origin-when-cross-origin"
+    Permissions-Policy         = "geolocation=(), camera=(), microphone=(), payment=()"
+
+# ─── CSP stricte pour le frontend ──────────────────────────────────
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      font-src 'self' data:;
+      img-src 'self' data:;
+      connect-src 'self' /.netlify/functions/;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'none'
+    """
+
+# ─── Pas de cache sur les fonctions ────────────────────────────────
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, max-age=0"
+
+# ─── Redirection /api/* → fonctions Netlify ────────────────────────
+[[redirects]]
+  from   = "/api/:function"
+  to     = "/.netlify/functions/:function"
+  status = 200
+  force  = true
+
+# ─── Fallback 404 ──────────────────────────────────────────────────
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

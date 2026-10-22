@@ -1,0 +1,20 @@
+{
+  "name": "millau-chatbot",
+  "version": "2.0.0",
+  "description": "Assistant IA pour les commerces de Millau (Aveyron) — Agency IA locale",
+  "private": true,
+  "main": "netlify/functions/chat.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod"
+  }
+}
