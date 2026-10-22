@@ -9,13 +9,17 @@ Propulsé par Claude AI (Anthropic) · Déploiement Netlify en 5 min.
 
 ```
 millau-chatbot/
-├── index.html                   # Frontend (UI + appels vers /api/chat)
+├── index.html                   # Frontend (UI, streaming, historique, réservation)
 ├── netlify.toml                 # Config Netlify + headers sécurité
 ├── package.json                 # Dépendances Node.js
-├── README.md
+├── lib/businesses.ts            # Prompts métier + rate limiting (côté serveur)
+├── db/                          # Schéma Drizzle (Netlify Database)
 └── netlify/
+    ├── database/migrations/     # Migrations SQL appliquées au déploiement
     └── functions/
-        └── chat.js              # Backend sécurisé (API key, rate limiting)
+        ├── chat.mts             # /api/chat — réponses IA en streaming
+        ├── leads.mts            # /api/leads — demandes de réservation / rappel
+        └── feedback.mts         # /api/feedback — avis 👍 / 👎
 ```
 
 ---
@@ -29,15 +33,9 @@ Uploader tous les fichiers de ce dossier sur GitHub.
 → [netlify.com](https://netlify.com) → **"Add new site"** → **"Import from Git"**  
 Sélectionner votre repo GitHub.
 
-### 3. Configurer les variables d'environnement
-Dans Netlify : **Site settings → Environment variables** → Ajouter :
-
-| Clé | Valeur |
-|-----|--------|
-| `ANTHROPIC_API_KEY` | `sk-ant-...` (votre clé Anthropic) |
-| `ALLOWED_ORIGINS` | `https://votre-site.netlify.app` |
-
-> 💡 Obtenez votre clé sur [console.anthropic.com](https://console.anthropic.com)
+### 3. Aucune clé API nécessaire
+Les appels IA passent par **Netlify AI Gateway** : les identifiants sont injectés automatiquement.
+La base de données (Netlify Database) est créée et migrée automatiquement au déploiement.
 
 ### 4. Déployer
 Netlify détecte automatiquement `netlify.toml` et déploie.  
@@ -54,9 +52,21 @@ Ouvrez `https://votre-site.netlify.app` → Sélectionnez un établissement → 
 - ✅ **Rate limiting** — 15 req/min/IP (ajustable dans `chat.js`)
 - ✅ **Validation & sanitisation** des messages
 - ✅ **Limite historique** — 10 derniers messages + 800 chars/message
-- ✅ **CORS strict** — domaine contrôlé via `ALLOWED_ORIGINS`
+- ✅ **Même origine uniquement** — le frontend et l'API sont servis par le même domaine
+- ✅ **Anti-spam** — champ piège + rate limiting sur le formulaire de réservation
 - ✅ **Headers sécurité** — CSP, X-Frame-Options, XSS-Protection
 - ✅ **Logs sans données sensibles** — les prompts ne sont pas loggés
+
+---
+
+## ✨ Fonctionnalités
+
+- 💬 Réponses IA affichées en direct (streaming)
+- 💾 Conversation sauvegardée dans le navigateur, reprise automatique, bouton « Effacer »
+- ✍️ Mise en forme des réponses (gras, listes)
+- 📋 Copier une réponse · 👍 / 👎 pour noter les réponses (enregistré en base)
+- 📅 Formulaire « Réserver / Être rappelé » : les demandes sont enregistrées dans la table `leads`
+- 🔎 Recherche parmi les établissements
 
 ---
 
@@ -65,7 +75,7 @@ Ouvrez `https://votre-site.netlify.app` → Sélectionnez un établissement → 
 | Composant | Coût |
 |-----------|------|
 | Netlify Starter | **Gratuit** (125k req functions/mois) |
-| Claude Haiku 4.5 | ~0,001 €/conversation |
+| Claude Haiku 5.5 (AI Gateway) | ~0,001 €/conversation |
 | 1 000 conversations/mois | **~1-2 €** de coût API |
 
 ---
@@ -73,23 +83,19 @@ Ouvrez `https://votre-site.netlify.app` → Sélectionnez un établissement → 
 ## 🛠️ Personnalisation
 
 ### Modifier un prompt métier
-Éditer `netlify/functions/chat.js` → section `SYSTEM_PROMPTS`.
+Éditer `lib/businesses.ts` → section `SYSTEM_PROMPTS`.
 
 ### Ajouter un établissement
-1. Ajouter dans `SYSTEM_PROMPTS` dans `chat.js`
+1. Ajouter dans `SYSTEM_PROMPTS` dans `lib/businesses.ts`
 2. Ajouter dans le tableau `BUSINESSES` dans `index.html`
 
 ### Changer le modèle
-Dans `chat.js`, ligne `model: 'claude-haiku-4-5'` :
-- `claude-haiku-4-5` → rapide, économique ✅ (recommandé)
-- `claude-sonnet-4-6` → plus intelligent, 5x plus cher
+Dans `netlify/functions/chat.mts`, constante `MODEL` :
+- `claude-haiku-5-5` → rapide, économique ✅ (recommandé)
+- `claude-sonnet-5-5` → plus intelligent, plus cher
 
 ### Ajuster le rate limiting
-Dans `chat.js` :
-```js
-const RATE_WINDOW_MS = 60_000; // fenêtre en ms
-const RATE_LIMIT     = 15;     // requêtes max par fenêtre
-```
+Dans `lib/businesses.ts`, fonction `checkRateLimit(key, limit = 15, windowMs = 60_000)`.
 
 ---
 
@@ -100,7 +106,7 @@ npm install
 npm run dev   # Lance netlify dev sur localhost:8888
 ```
 
-> Nécessite [Netlify CLI](https://docs.netlify.com/cli/get-started/) et la variable `ANTHROPIC_API_KEY` dans un fichier `.env`.
+> Nécessite [Netlify CLI](https://docs.netlify.com/cli/get-started/) et un site lié (`netlify link`) pour utiliser AI Gateway en local.
 
 ---
 

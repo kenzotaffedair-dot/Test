@@ -8,7 +8,7 @@
   publish   = "."
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 # ─── Headers de sécurité globaux ───────────────────────────────────
 [[headers]]
@@ -25,30 +25,13 @@
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-    Content-Security-Policy = """
-      default-src 'self';
-      script-src 'self' 'unsafe-inline';
-      style-src 'self' 'unsafe-inline';
-      font-src 'self' data:;
-      img-src 'self' data:;
-      connect-src 'self' /.netlify/functions/;
-      frame-ancestors 'none';
-      base-uri 'self';
-      form-action 'none'
-    """
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
 
 # ─── Pas de cache sur les fonctions ────────────────────────────────
 [[headers]]
-  for = "/.netlify/functions/*"
+  for = "/api/*"
   [headers.values]
     Cache-Control = "no-store, no-cache, max-age=0"
-
-# ─── Redirection /api/* → fonctions Netlify ────────────────────────
-[[redirects]]
-  from   = "/api/:function"
-  to     = "/.netlify/functions/:function"
-  status = 200
-  force  = true
 
 # ─── Fallback 404 ──────────────────────────────────────────────────
 [[redirects]]

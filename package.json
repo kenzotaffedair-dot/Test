@@ -3,15 +3,17 @@
   "version": "2.0.0",
   "description": "Assistant IA pour les commerces de Millau (Aveyron) — Agency IA locale",
   "private": true,
-  "main": "netlify/functions/chat.js",
   "engines": {
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0"
+    "@anthropic-ai/sdk": "^1.1.0",
+    "@netlify/database": "^1.1.0",
+    "drizzle-orm": "^1.0.0-beta.22"
   },
   "devDependencies": {
-    "netlify-cli": "^17.0.0"
+    "@netlify/functions": "^5.3.0",
+    "drizzle-kit": "^1.0.0-beta.22"
   },
   "scripts": {
     "dev": "netlify dev",

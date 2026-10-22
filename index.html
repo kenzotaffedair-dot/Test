@@ -489,6 +489,71 @@ textarea#msg-input::placeholder { color: #a0aec0; }
   text-align  : center;
 }
 
+
+/* ─── Barre de recherche ─────────────────────────────────────────── */
+.search-wrap { margin-bottom: 24px; }
+.search-input {
+  width: 100%; max-width: 420px; padding: 11px 16px; border-radius: 24px;
+  border: 2px solid var(--border); background: var(--surface); font-family: var(--font);
+  font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: #93c5fd; }
+.empty-state { color: var(--text-muted); font-size: 0.9rem; padding: 20px 0; }
+
+/* ─── Actions topbar ─────────────────────────────────────────────── */
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+.topbar-actions .back-btn { margin-left: 0; }
+
+/* ─── Contenu formaté des bulles ─────────────────────────────────── */
+.msg-bubble ul { margin: 6px 0 6px 18px; }
+.msg-bubble li { margin: 2px 0; }
+.msg-bubble p + p { margin-top: 8px; }
+.msg-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.msg-tools { display: flex; gap: 4px; padding-left: 6px; opacity: 0; transition: opacity 0.2s; }
+.msg.bot:hover .msg-tools, .msg-tools:focus-within, .msg-tools.voted { opacity: 1; }
+.tool-btn {
+  background: none; border: 1px solid transparent; border-radius: 8px; cursor: pointer;
+  font-size: 0.78rem; padding: 2px 7px; color: var(--text-muted); font-family: var(--font);
+}
+.tool-btn:hover { background: var(--surface); border-color: var(--border); }
+.tool-btn.active { background: #eff6ff; border-color: #bfdbfe; }
+.tool-btn:disabled { cursor: default; }
+.cursor::after { content: '▍'; animation: blink 1s steps(2) infinite; margin-left: 1px; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── Bouton réservation ─────────────────────────────────────────── */
+.cta-row { padding: 0 20px 10px; display: flex; justify-content: center; }
+.cta-btn {
+  border: none; color: white; padding: 9px 18px; border-radius: 20px; font-weight: 700;
+  font-size: 0.83rem; cursor: pointer; font-family: var(--font); box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.cta-btn:hover { transform: translateY(-1px); opacity: 0.92; }
+
+/* ─── Modale ─────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: none;
+  align-items: center; justify-content: center; z-index: 500; padding: 16px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 440px; padding: 24px; animation: msgIn 0.2s ease both;
+}
+.modal h3 { font-size: 1.1rem; margin-bottom: 4px; }
+.modal .modal-sub { color: var(--text-muted); font-size: 0.83rem; margin-bottom: 16px; }
+.modal label { display: block; font-size: 0.8rem; font-weight: 600; margin: 10px 0 4px; }
+.modal input, .modal textarea {
+  width: 100%; padding: 9px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 0.88rem; outline: none; background: var(--bg);
+}
+.modal input:focus, .modal textarea:focus { border-color: #93c5fd; }
+.modal .row { display: flex; gap: 10px; }
+.modal .row > div { flex: 1; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+#toast.ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+
 /* ═══════════════════════════════════════════════════════════════════
    Responsive
 ═══════════════════════════════════════════════════════════════════ */
@@ -498,6 +563,8 @@ textarea#msg-input::placeholder { color: #a0aec0; }
   .msg                 { max-width: 92%; }
   .app-header          { padding: 12px 16px; }
   #screen-select       { padding: 24px 16px 40px; }
+  .back-btn            { padding: 7px 10px; }
+  .msg-tools           { opacity: 1; }
 }
 </style>
 </head>
@@ -522,6 +589,9 @@ textarea#msg-input::placeholder { color: #a0aec0; }
 <main id="screen-select">
   <h1 class="screen-title">Choisissez un établissement</h1>
   <p class="screen-sub">6 assistants IA configurés pour des commerces millavois — Testez en live</p>
+  <div class="search-wrap">
+    <input type="search" class="search-input" id="biz-search" placeholder="🔎 Rechercher un établissement, une activité…" aria-label="Rechercher un établissement">
+  </div>
   <div class="biz-grid" id="biz-grid" role="list" aria-label="Établissements disponibles"></div>
 </main>
 
@@ -539,12 +609,19 @@ textarea#msg-input::placeholder { color: #a0aec0; }
         En ligne · IA active
       </div>
     </div>
-    <button class="back-btn" onclick="goBack()" aria-label="Changer d'établissement">← Changer</button>
+    <div class="topbar-actions">
+      <button class="back-btn" onclick="resetChat()" aria-label="Nouvelle conversation" title="Nouvelle conversation">🗑 Effacer</button>
+      <button class="back-btn" onclick="goBack()" aria-label="Changer d'établissement">← Changer</button>
+    </div>
   </div>
 
   <div class="messages" id="messages" role="log" aria-live="polite" aria-atomic="false"></div>
 
   <div class="quick-replies" id="quick-replies" role="group" aria-label="Questions suggérées"></div>
+
+  <div class="cta-row">
+    <button class="cta-btn" id="cta-btn" onclick="openLead()">📅 Réserver / Être rappelé</button>
+  </div>
 
   <div class="input-area">
     <div class="input-wrap">
@@ -566,12 +643,41 @@ textarea#msg-input::placeholder { color: #a0aec0; }
   </div>
 
   <div class="chat-footer">
-    Propulsé par <strong>Claude AI (Anthropic)</strong> · Agency IA Millau · Données fictives à titre de démonstration
+    Propulsé par <strong>Claude AI (Anthropic)</strong> via Netlify AI Gateway · Agency IA Millau · Données fictives à titre de démonstration
   </div>
 
 </section>
 
 <div id="toast" role="alert"></div>
+
+<!-- ── Modale de demande de réservation / rappel ───────────────────── -->
+<div class="modal-backdrop" id="lead-modal" onclick="if(event.target===this)closeLead()">
+  <form class="modal" id="lead-form" role="dialog" aria-modal="true" aria-labelledby="lead-title" novalidate>
+    <h3 id="lead-title">📅 Demande de réservation</h3>
+    <p class="modal-sub" id="lead-sub">Laissez vos coordonnées, l'équipe vous recontacte rapidement.</p>
+    <label for="lead-name">Nom *</label>
+    <input id="lead-name" name="name" required maxlength="100" autocomplete="name">
+    <label for="lead-contact">E-mail ou téléphone *</label>
+    <input id="lead-contact" name="contact" required maxlength="150" autocomplete="email">
+    <div class="row">
+      <div>
+        <label for="lead-date">Date souhaitée</label>
+        <input id="lead-date" name="date" type="date">
+      </div>
+      <div>
+        <label for="lead-guests">Personnes</label>
+        <input id="lead-guests" name="guests" type="number" min="1" max="499">
+      </div>
+    </div>
+    <label for="lead-message">Message</label>
+    <textarea id="lead-message" name="message" rows="3" maxlength="1000"></textarea>
+    <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
+    <div class="modal-actions">
+      <button type="button" class="back-btn" onclick="closeLead()">Annuler</button>
+      <button type="submit" class="cta-btn" id="lead-submit">Envoyer la demande</button>
+    </div>
+  </form>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════
      JavaScript
@@ -580,7 +686,10 @@ textarea#msg-input::placeholder { color: #a0aec0; }
 'use strict';
 
 // ─── Config API ─────────────────────────────────────────────────────
-const API_URL = '/api/chat'; // → /.netlify/functions/chat (via netlify.toml)
+const API_URL      = '/api/chat';
+const LEADS_URL    = '/api/leads';
+const FEEDBACK_URL = '/api/feedback';
+const STORE_KEY    = 'millau-chat:';
 
 // ─── Données établissements (UI uniquement, prompts = côté serveur) ──
 const BUSINESSES = [
@@ -657,12 +766,16 @@ let current  = null;
 let history  = [];
 let loading  = false;
 
-// ─── Rendu des cartes ────────────────────────────────────────────────
-function renderCards() {
-  document.getElementById('biz-grid').innerHTML = BUSINESSES.map(b => `
+// ─── Rendu des cartes (+ recherche) ──────────────────────────────────
+function renderCards(filter = '') {
+  const q = normalize(filter);
+  const list = BUSINESSES.filter(b =>
+    !q || normalize(`${b.name} ${b.tagline} ${b.desc}`).includes(q));
+
+  document.getElementById('biz-grid').innerHTML = list.length ? list.map(b => `
     <article class="biz-card" role="listitem" onclick="selectBiz('${b.id}')" tabindex="0"
       onkeydown="if(event.key==='Enter'||event.key===' ')selectBiz('${b.id}')"
-      aria-label="Tester l'assistant de ${b.name}">
+      aria-label="Tester l'assistant de ${escHtml(b.name)}">
       <div class="biz-card-top" style="background:${b.gradient}">
         <span class="biz-emoji" aria-hidden="true">${b.emoji}</span>
         <div class="biz-meta">
@@ -673,18 +786,35 @@ function renderCards() {
       <div class="biz-card-body">
         <p class="biz-desc">${b.desc}</p>
         <button class="biz-btn" style="background:${b.color}" tabindex="-1" aria-hidden="true">
-          Tester l'assistant&nbsp;
+          ${loadHistory(b.id).length ? 'Reprendre la conversation' : 'Tester l\'assistant'}&nbsp;
         </button>
       </div>
     </article>
-  `).join('');
+  `).join('') : '<p class="empty-state">Aucun établissement ne correspond à votre recherche.</p>';
+}
+
+function normalize(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+// ─── Persistance locale de la conversation ───────────────────────────
+function loadHistory(id) {
+  try {
+    const h = JSON.parse(localStorage.getItem(STORE_KEY + id) || '[]');
+    return Array.isArray(h) ? h : [];
+  } catch { return []; }
+}
+
+function saveHistory() {
+  if (!current) return;
+  try { localStorage.setItem(STORE_KEY + current.id, JSON.stringify(history.slice(-30))); } catch {}
 }
 
 // ─── Sélection d'un établissement ────────────────────────────────────
 function selectBiz(id) {
   current = BUSINESSES.find(b => b.id === id);
   if (!current) return;
-  history = [];
+  history = loadHistory(id);
 
   // UI
   const avatar = document.getElementById('chat-avatar');
@@ -692,42 +822,92 @@ function selectBiz(id) {
   avatar.style.background = current.gradient;
   document.getElementById('chat-biz-name').textContent = current.name;
   document.getElementById('send-btn').style.background = current.color;
+  document.getElementById('cta-btn').style.background = current.color;
 
   // Switch screens
   document.getElementById('screen-select').style.display = 'none';
   document.getElementById('screen-chat').style.display = 'flex';
   document.getElementById('messages').innerHTML = '';
 
-  renderQuickReplies();
+  // Message de bienvenue (local, pas d'appel API) + historique restauré
+  addMsg('bot', current.welcome, { tools: false });
+  history.forEach((m, i) => addMsg(m.role === 'user' ? 'user' : 'bot', m.content, {
+    question: m.role === 'assistant' ? history[i - 1]?.content : undefined,
+  }));
 
-  // Message de bienvenue (local, pas d'appel API)
-  setTimeout(() => addMsg('bot', current.welcome), 280);
+  if (history.length === 0) renderQuickReplies();
+  else document.getElementById('quick-replies').innerHTML = '';
+
   document.getElementById('msg-input').focus();
 }
 
 function goBack() {
+  if (loading) return;
   document.getElementById('screen-select').style.display = '';
   document.getElementById('screen-chat').style.display = 'none';
   current = null;
   history = [];
+  renderCards(document.getElementById('biz-search').value);
+}
+
+function resetChat() {
+  if (!current || loading) return;
+  if (history.length && !confirm('Effacer cette conversation ?')) return;
+  history = [];
+  try { localStorage.removeItem(STORE_KEY + current.id); } catch {}
+  selectBiz(current.id);
 }
 
 // ─── Quick replies ────────────────────────────────────────────────────
 function renderQuickReplies() {
-  document.getElementById('quick-replies').innerHTML = current.quickReplies.map(q =>
-    `<button class="qr-btn" onclick="useQR(this,'${escHtml(q)}')"
-      style="border-color:${current.color}33;color:${current.color}">${q}</button>`
-  ).join('');
+  const box = document.getElementById('quick-replies');
+  box.innerHTML = '';
+  current.quickReplies.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'qr-btn';
+    btn.textContent = q;
+    btn.style.borderColor = current.color + '33';
+    btn.style.color = current.color;
+    btn.onclick = () => useQR(q);
+    box.appendChild(btn);
+  });
 }
 
-function useQR(btn, text) {
+function useQR(text) {
   document.getElementById('msg-input').value = text;
   document.getElementById('quick-replies').innerHTML = '';
   sendMsg();
 }
 
+// ─── Mise en forme légère (gras, italique, listes) — sûre car échappée ─
+function formatText(text) {
+  const blocks = escHtml(text).split(/\n{2,}/);
+  return blocks.map(block => {
+    const lines = block.split('\n');
+    let html = '', inList = false;
+    for (const raw of lines) {
+      const m = raw.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+      if (m) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${inline(m[1])}</li>`;
+      } else {
+        if (inList) { html += '</ul>'; inList = false; }
+        if (raw.trim()) html += (html && !html.endsWith('</ul>') ? '<br>' : '') + inline(raw);
+      }
+    }
+    if (inList) html += '</ul>';
+    return `<p>${html}</p>`;
+  }).join('');
+}
+
+function inline(s) {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g, '$1<em>$2</em>');
+}
+
 // ─── Messages ─────────────────────────────────────────────────────────
-function addMsg(role, text) {
+function addMsg(role, text, opts = {}) {
   const area = document.getElementById('messages');
   const div  = document.createElement('div');
   div.className = `msg ${role}`;
@@ -740,11 +920,59 @@ function addMsg(role, text) {
 
   div.innerHTML = `
     <div class="msg-avatar" style="${avatarStyle}" aria-hidden="true">${avatarEmoji}</div>
-    <div class="msg-bubble" style="${bubbleStyle}">${escHtml(text).replace(/\n/g,'<br>')}</div>
+    <div class="msg-col">
+      <div class="msg-bubble" style="${bubbleStyle}"></div>
+    </div>
   `;
+  const bubble = div.querySelector('.msg-bubble');
+  bubble.innerHTML = role === 'bot' ? formatText(text) : escHtml(text).replace(/\n/g, '<br>');
 
   area.appendChild(div);
+  if (role === 'bot' && opts.tools !== false && text) attachTools(div, text, opts.question);
   area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+// Boutons Copier / 👍 / 👎 sous une réponse de l'assistant
+function attachTools(div, text, question) {
+  const tools = document.createElement('div');
+  tools.className = 'msg-tools';
+  tools.innerHTML = `
+    <button class="tool-btn" data-a="copy" title="Copier la réponse">📋 Copier</button>
+    <button class="tool-btn" data-a="up" title="Réponse utile" aria-label="Réponse utile">👍</button>
+    <button class="tool-btn" data-a="down" title="Réponse peu utile" aria-label="Réponse peu utile">👎</button>
+  `;
+  tools.addEventListener('click', async e => {
+    const btn = e.target.closest('button');
+    if (!btn || btn.disabled) return;
+    if (btn.dataset.a === 'copy') {
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = '✓ Copié';
+        setTimeout(() => { btn.textContent = '📋 Copier'; }, 1500);
+      } catch { showToast('Impossible de copier le texte.'); }
+      return;
+    }
+    tools.querySelectorAll('[data-a="up"],[data-a="down"]').forEach(b => { b.disabled = true; });
+    btn.classList.add('active');
+    tools.classList.add('voted');
+    sendFeedback(btn.dataset.a === 'up', text, question);
+  });
+  div.querySelector('.msg-col').appendChild(tools);
+}
+
+async function sendFeedback(helpful, answer, question) {
+  try {
+    const res = await fetch(FEEDBACK_URL, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ businessId: current.id, helpful, answer, question }),
+    });
+    if (!res.ok) throw new Error();
+    showToast('Merci pour votre avis !', true);
+  } catch {
+    showToast('⚠️ Votre avis n\'a pas pu être enregistré.');
+  }
 }
 
 function showTyping() {
@@ -764,7 +992,7 @@ function hideTyping() {
   document.getElementById('_typing')?.remove();
 }
 
-// ─── Envoi message ────────────────────────────────────────────────────
+// ─── Envoi message (réponse en streaming) ─────────────────────────────
 async function sendMsg() {
   if (loading || !current) return;
 
@@ -772,6 +1000,7 @@ async function sendMsg() {
   const text  = input.value.trim();
   if (!text) return;
 
+  const biz = current;
   input.value = '';
   updateCharHint();
   loading = true;
@@ -782,44 +1011,129 @@ async function sendMsg() {
   history.push({ role: 'user', content: text });
 
   showTyping();
+  let msgDiv = null;
+  let reply  = '';
 
   try {
     const res = await fetch(API_URL, {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify({
-        messages  : history.slice(-10),
-        businessId: current.id,
+        messages  : history.slice(-12),
+        businessId: biz.id,
       }),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
+    if (!res.ok || !res.body) {
+      const data = await res.json().catch(() => ({}));
       throw new Error(data.error || `Erreur ${res.status}`);
     }
 
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    const area    = document.getElementById('messages');
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      reply += decoder.decode(value, { stream: true });
+      if (current !== biz) continue; // l'utilisateur a changé d'écran
+      if (!msgDiv) {
+        hideTyping();
+        msgDiv = addMsg('bot', '', { tools: false });
+      }
+      const bubble = msgDiv.querySelector('.msg-bubble');
+      bubble.innerHTML = formatText(reply);
+      bubble.classList.add('cursor');
+      area.scrollTop = area.scrollHeight;
+    }
+    reply += decoder.decode();
+    reply = reply.trim() || 'Je n\'ai pas pu répondre.';
+
     hideTyping();
-    const reply = data.reply || 'Je n\'ai pas pu répondre.';
-    history.push({ role: 'assistant', content: reply });
-    addMsg('bot', reply);
+    if (current === biz) {
+      if (!msgDiv) msgDiv = addMsg('bot', '', { tools: false });
+      const bubble = msgDiv.querySelector('.msg-bubble');
+      bubble.classList.remove('cursor');
+      bubble.innerHTML = formatText(reply);
+      attachTools(msgDiv, reply, text);
+      history.push({ role: 'assistant', content: reply });
+      saveHistory();
+    }
 
   } catch (err) {
     hideTyping();
+    msgDiv?.remove();
     showToast('⚠️ ' + (err.message || 'Erreur réseau. Vérifiez votre connexion.'));
-    // Retire le dernier message user de l'historique si erreur
-    history.pop();
+    if (current === biz) {
+      // Retire le message en échec et le remet dans le champ pour réessayer
+      history.pop();
+      [...document.querySelectorAll('#messages .msg.user')].pop()?.remove();
+      input.value = text;
+      updateCharHint();
+    }
   } finally {
     loading = false;
     document.getElementById('send-btn').disabled = false;
-    input.focus();
+    if (current) input.focus();
   }
 }
 
+// ─── Demande de réservation / rappel ─────────────────────────────────
+function openLead() {
+  if (!current) return;
+  document.getElementById('lead-sub').textContent =
+    `Laissez vos coordonnées, l'équipe de ${current.name} vous recontacte rapidement.`;
+  document.getElementById('lead-submit').style.background = current.color;
+  document.getElementById('lead-date').min = new Date().toISOString().slice(0, 10);
+  document.getElementById('lead-modal').classList.add('open');
+  document.getElementById('lead-name').focus();
+}
+
+function closeLead() {
+  document.getElementById('lead-modal').classList.remove('open');
+}
+
+document.getElementById('lead-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!current) return;
+  const form = e.target;
+  const btn  = document.getElementById('lead-submit');
+  const data = Object.fromEntries(new FormData(form));
+
+  if (!data.name.trim() || !data.contact.trim()) {
+    showToast('⚠️ Merci de renseigner votre nom et un moyen de contact.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Envoi…';
+  try {
+    const res = await fetch(LEADS_URL, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ ...data, businessId: current.id }),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(out.error || `Erreur ${res.status}`);
+
+    form.reset();
+    closeLead();
+    addMsg('bot', `✅ Merci ${data.name.trim()} ! Votre demande a bien été transmise à **${current.name}**. Vous serez recontacté(e) très prochainement.`, { tools: false });
+    showToast('Demande envoyée !', true);
+  } catch (err) {
+    showToast('⚠️ ' + (err.message || 'Erreur réseau.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer la demande';
+  }
+});
+
 // ─── Toast ────────────────────────────────────────────────────────────
-function showToast(msg) {
+function showToast(msg, ok = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
+  t.classList.toggle('ok', ok);
   t.style.display = 'block';
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.style.display = 'none'; }, 4000);
@@ -850,6 +1164,9 @@ document.getElementById('msg-input').addEventListener('input', updateCharHint);
 document.getElementById('msg-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 });
+
+document.getElementById('biz-search').addEventListener('input', e => renderCards(e.target.value));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLead(); });
 
 // ─── Init ─────────────────────────────────────────────────────────────
 renderCards();
